@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f7fb;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+
+    h1 {
+      background: #2c3e50;
+      color: white;
+      padding: 15px;
+      margin: 0;
+    }
+
+    h3 {
+      color: #333;
+      margin-top: 20px;
+    }
+
+    #available {
+      color: green;
+      font-weight: bold;
+      font-size: 22px;
+    }
+
+    input {
+      padding: 10px;
+      width: 250px;
+      margin: 15px 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      padding: 10px 15px;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #2980b9;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      max-width: 400px;
+      margin: 20px auto;
+    }
+
+    li {
+      background: white;
+      margin: 10px 0;
+      padding: 12px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    li button {
+      background: #e74c3c;
+    }
+
+    li button:hover {
+      background: #c0392b;
+    }
+  </style>
+  <title>Parking Management System</title>
+</head>
+
+<body>
+
+  <h1>🚗 Parking Management System</h1>
+
+  <h3>Available Spots: <span id="available">0</span></h3>
+
+  <input id="vehicle" placeholder="Enter Vehicle Number">
+  <button onclick="enterVehicle()">Enter</button>
+
+  <h2>Parked Vehicles</h2>
+  <ul id="list"></ul>
+
+  <script>
+    const API = "http://localhost:5000";
+
+    // Load data
+    async function fetchData() {
+      try {
+        const res1 = await fetch(API + "/active");
+        const active = await res1.json();
+
+        const res2 = await fetch(API + "/availability");
+        const avail = await res2.json();
+
+        document.getElementById("available").innerText = avail.available;
+
+        const list = document.getElementById("list");
+        list.innerHTML = "";
+
+        active.forEach(v => {
+          const li = document.createElement("li");
+          li.innerHTML = `
+        ${v.vehicle_number}
+        <button onclick="exitVehicle('${v.id}')">Exit</button>
+      `;
+          list.appendChild(li);
+        });
+
+      } catch (err) {
+        console.error("Error:", err);
+      }
+    }
+
+    // Enter vehicle
+    async function enterVehicle() {
+      const vehicle = document.getElementById("vehicle").value;
+
+      if (!vehicle) {
+        alert("Please enter vehicle number");
+        return;
+      }
+
+      await fetch(API + "/entry", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ vehicle_number: vehicle })
+      });
+
+      document.getElementById("vehicle").value = "";
+      fetchData();
+    }
+
+    // Exit vehicle
+    async function exitVehicle(id) {
+      await fetch(API + "/exit/" + id, {
+        method: "POST"
+      });
+
+      fetchData();
+    }
+
+    // Auto load on page start
+    fetchData();
+  </script>
+
+</body>
+
+</html>
